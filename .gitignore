@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Flask
+instance/
+.webassets-cache
+
+# Archivos del proyecto
+uploads/*
+!uploads/.gitkeep
+outputs/*
+!outputs/.gitkeep
+ffmpeg/
+ffmpeg.zip
+ffmpeg-master-latest-win64-gpl/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

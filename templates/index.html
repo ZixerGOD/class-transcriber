@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Transcriptor y Resumen de Clases</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="mb-4">Transcriptor y Resumen de Clases</h1>
+        <form id="uploadForm" enctype="multipart/form-data" class="mb-4">
+            <div class="mb-3">
+                <label for="file" class="form-label">Selecciona tu clase en video (MP4, AVI, MOV, MKV):</label>
+                <input class="form-control" type="file" id="file" name="file" accept="video/*" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Subir y Procesar</button>
+        </form>
+        <div id="progress" class="mb-3" style="display:none;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span class="ms-2">Procesando, por favor espera...</span>
+        </div>
+        <div id="result" style="display:none;">
+            <h3>Resumen</h3>
+            <pre id="summary" class="bg-white p-3 border rounded"></pre>
+            <h3>Transcripción Completa</h3>
+            <pre id="transcription" class="bg-white p-3 border rounded"></pre>
+            <a id="downloadLink" class="btn btn-success mt-3" href="#" download>Descargar resultado</a>
+        </div>
+    </div>
+    <script>
+    document.getElementById('uploadForm').onsubmit = async function(e) {
+        e.preventDefault();
+        document.getElementById('progress').style.display = 'block';
+        document.getElementById('result').style.display = 'none';
+        const fileInput = document.getElementById('file');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        // Subir archivo
+        let uploadRes = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+        let uploadData = await uploadRes.json();
+        if (!uploadData.success) {
+            alert(uploadData.error || 'Error al subir el archivo');
+            document.getElementById('progress').style.display = 'none';
+            return;
+        }
+        // Procesar archivo
+        let processRes = await fetch('/process', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({filename: uploadData.filename, generate_summary: true})
+        });
+        let processData = await processRes.json();
+        document.getElementById('progress').style.display = 'none';
+        if (!processData.success) {
+            alert(processData.error || 'Error al procesar el archivo');
+            return;
+        }
+        document.getElementById('summary').textContent = processData.summary;
+        document.getElementById('transcription').textContent = processData.transcription;
+        document.getElementById('downloadLink').href = '/download/' + processData.output_file;
+        document.getElementById('downloadLink').style.display = 'inline-block';
+        document.getElementById('result').style.display = 'block';
+    };
+    </script>
+</body>
+</html>
