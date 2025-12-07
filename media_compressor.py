@@ -87,17 +87,20 @@ def compress_video(input_path, output_path, quality='medium'):
         # Configurar parámetros según calidad
         quality_settings = {
             'low': {
-                'scale': '640:360',
+                'width': 640,
+                'height': 360,
                 'bitrate': '500k',
                 'crf': 28
             },
             'medium': {
-                'scale': '1280:720',
+                'width': 1280,
+                'height': 720,
                 'bitrate': '2500k',
                 'crf': 23
             },
             'high': {
-                'scale': '1920:1080',
+                'width': 1920,
+                'height': 1080,
                 'bitrate': '5000k',
                 'crf': 18
             }
@@ -108,10 +111,10 @@ def compress_video(input_path, output_path, quality='medium'):
         cmd = [
             'ffmpeg',
             '-i', input_path,
-            '-vf', f"scale={settings['scale']}:force_original_aspect_ratio=decrease:force_divisible_by=2",
+            '-vf', f"scale={settings['width']}:{settings['height']}",
             '-b:v', settings['bitrate'],
             '-c:v', 'libx264',
-            '-preset', 'medium',
+            '-preset', 'ultrafast',
             '-crf', str(settings['crf']),
             '-c:a', 'aac',
             '-b:a', '128k',
@@ -119,12 +122,29 @@ def compress_video(input_path, output_path, quality='medium'):
             output_path
         ]
         
-        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        print(f"Ejecutando comando FFmpeg: {' '.join(cmd)}")
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)  # 10 minutos de timeout
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'error': 'Video compression timed out (exceeded 10 minutes)'}
+        
+        if result.returncode != 0:
+            print(f"Error FFmpeg (código {result.returncode}):")
+            print(f"STDOUT: {result.stdout}")
+            print(f"STDERR: {result.stderr}")
+            return {'success': False, 'error': f'FFmpeg error: {result.stderr}'}
         
         # Calcular cambio de tamaño
+        if not os.path.exists(output_path):
+            return {'success': False, 'error': 'Output file was not created'}
+        
         original_size = os.path.getsize(input_path) / (1024 * 1024)
         compressed_size = os.path.getsize(output_path) / (1024 * 1024)
-        compression_ratio = ((original_size - compressed_size) / original_size) * 100
+        
+        if original_size == 0:
+            compression_ratio = 0
+        else:
+            compression_ratio = ((original_size - compressed_size) / original_size) * 100
         
         return {
             'success': True,
@@ -132,9 +152,12 @@ def compress_video(input_path, output_path, quality='medium'):
             'compressed_size': f"{compressed_size:.2f} MB",
             'compression_ratio': f"{compression_ratio:.1f}%",
             'quality': quality,
-            'resolution': settings['scale']
+            'resolution': f"{settings['width']}x{settings['height']}"
         }
     except Exception as e:
+        print(f"Exception in compress_video: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {'success': False, 'error': str(e)}
 
 def get_media_info(file_path):

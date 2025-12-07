@@ -215,11 +215,17 @@ def compress_video_route():
         output_filename = f"compressed_{os.path.splitext(filename)[0]}.mp4"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
         
+        print(f"Guardando archivo: {input_path}")
         file.save(input_path)
+        
+        print(f"Comprimiendo video: {filename}")
         result = compress_video(input_path, output_path, quality=quality)
         
         if result['success']:
             result['download_file'] = output_filename
+            print(f"Video comprimido exitosamente")
+        else:
+            print(f"Error al comprimir: {result.get('error')}")
         
         return jsonify(result)
     except Exception as e:
