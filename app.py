@@ -8,6 +8,9 @@ import imageio_ffmpeg
 os.environ['PATH'] = os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe()) + os.pathsep + os.environ['PATH']
 
 from transcriber import process_video
+from humanizer import humanize_text, improve_readability
+from summarizer import summarize_text, extract_keywords
+from media_compressor import compress_image, convert_image_format, compress_video, get_media_info
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -88,6 +91,141 @@ def list_outputs():
             if f.endswith('.txt'):
                 files.append(f)
     return jsonify({'files': files})
+
+@app.route('/humanize', methods=['POST'])
+def humanize():
+    data = request.json
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    
+    try:
+        humanized = humanize_text(text)
+        improved = improve_readability(humanized)
+        
+        return jsonify({
+            'success': True,
+            'humanized_text': improved
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/summarize', methods=['POST'])
+def summarize():
+    data = request.json
+    text = data.get('text', '')
+    percentage = data.get('percentage', 30)
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    
+    try:
+        summary = summarize_text(text, percentage=percentage)
+        keywords = extract_keywords(text, num_keywords=10)
+        
+        return jsonify({
+            'success': True,
+            'summary': summary,
+            'keywords': keywords,
+            'original_length': len(text),
+            'summary_length': len(summary)
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/compress-image', methods=['POST'])
+def compress_image_route():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    quality = request.form.get('quality', 75, type=int)
+    max_width = request.form.get('max_width', 1920, type=int)
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        output_filename = f"compressed_{os.path.splitext(filename)[0]}.jpg"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        
+        file.save(input_path)
+        result = compress_image(input_path, output_path, quality=quality, max_width=max_width)
+        
+        if result['success']:
+            result['download_file'] = output_filename
+        
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/convert-image', methods=['POST'])
+def convert_image_route():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    target_format = request.form.get('format', 'webp')
+    quality = request.form.get('quality', 80, type=int)
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        output_filename = f"converted_{os.path.splitext(filename)[0]}.{target_format}"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        
+        file.save(input_path)
+        result = convert_image_format(input_path, output_path, target_format=target_format, quality=quality)
+        
+        if result['success']:
+            result['download_file'] = output_filename
+        
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/compress-video', methods=['POST'])
+def compress_video_route():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    quality = request.form.get('quality', 'medium')
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        output_filename = f"compressed_{os.path.splitext(filename)[0]}.mp4"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+        
+        file.save(input_path)
+        result = compress_video(input_path, output_path, quality=quality)
+        
+        if result['success']:
+            result['download_file'] = output_filename
+        
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

@@ -56,18 +56,63 @@ python app.py
 
 2. Abre tu navegador en: `http://localhost:5000`
 
-3. Sube un archivo de video (MP4, AVI, MOV, MKV)
+### Transcribir Videos
 
-4. Espera a que se procese (esto puede tomar varios minutos dependiendo del tamaño del video)
+1. Ve a la pestaña "Transcribir Video"
+2. Sube un archivo de video (MP4, AVI, MOV, MKV)
+3. Espera a que se procese (esto puede tomar varios minutos dependiendo del tamaño del video)
+4. Visualiza la transcripción y el resumen, o descarga el archivo de texto generado
 
-5. Visualiza la transcripción y el resumen, o descarga el archivo de texto generado
+### Humanizar Texto
+
+1. Ve a la pestaña "Humanizar Texto"
+2. Pega el texto que deseas mejorar (puede ser una transcripción o cualquier texto)
+3. Haz clic en "Humanizar Texto"
+4. Copia o guarda el resultado mejorado
+
+### Resumir Texto
+
+1. Ve a la pestaña "Resumir Texto"
+2. Pega el texto largo que deseas resumir
+3. Ajusta el porcentaje del resumen (10-70%)
+4. Haz clic en "Resumir Texto"
+5. Visualiza el resumen y las palabras clave extraídas
+
+### Comprimir Medios
+
+#### Comprimir Imagen
+1. Ve a la pestaña "Comprimir Medios" → "Comprimir Imagen"
+2. Selecciona una imagen
+3. Ajusta la calidad (1-95%) y el ancho máximo
+4. Haz clic en "Comprimir Imagen"
+5. Descarga la imagen comprimida
+
+#### Convertir Imagen
+1. Ve a la pestaña "Comprimir Medios" → "Convertir Imagen"
+2. Selecciona una imagen
+3. Elige el formato de salida (WebP, JPG, PNG)
+4. Ajusta la calidad
+5. Haz clic en "Convertir Imagen"
+6. Descarga la imagen convertida
+
+#### Comprimir Video
+1. Ve a la pestaña "Comprimir Medios" → "Comprimir Video"
+2. Selecciona un video
+3. Elige la calidad de salida (Baja, Media o Alta)
+4. Haz clic en "Comprimir Video" (esto puede tomar varios minutos)
+5. Descarga el video comprimido
 
 ## Características
 
 - ✅ Extracción automática de audio desde videos
 - ✅ Transcripción de audio a texto usando Whisper de OpenAI
 - ✅ Generación de resúmenes automáticos
-- ✅ Interfaz web amigable
+- ✅ Humanización de texto para mejorar legibilidad
+- ✅ Resumen inteligente de textos largos con extracción de palabras clave
+- ✅ Compresión de imágenes (reducir tamaño, píxeles, cambiar formato)
+- ✅ Conversión de formatos de imagen (WebP, JPG, PNG)
+- ✅ Compresión de videos (redimensionar, reducir bitrate)
+- ✅ Interfaz web amigable con pestañas
 - ✅ Descarga de resultados en formato texto
 
 ## Notas
