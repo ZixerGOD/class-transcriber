@@ -81,7 +81,7 @@ def convert_image_format(input_path, output_path, target_format='webp', quality=
 def compress_video(input_path, output_path, quality='medium'):
     """
     Comprime un video reduciendo bitrate y resolución
-    quality: 'low' (360p), 'medium' (720p), 'high' (1080p)
+    quality: 'low' (360p), 'medium' (480p), 'high' (720p), 'very_high' (1080p)
     """
     try:
         # Configurar parámetros según calidad
@@ -93,12 +93,18 @@ def compress_video(input_path, output_path, quality='medium'):
                 'crf': 28
             },
             'medium': {
+                'width': 854,
+                'height': 480,
+                'bitrate': '1500k',
+                'crf': 25
+            },
+            'high': {
                 'width': 1280,
                 'height': 720,
                 'bitrate': '2500k',
                 'crf': 23
             },
-            'high': {
+            'very_high': {
                 'width': 1920,
                 'height': 1080,
                 'bitrate': '5000k',
@@ -156,6 +162,96 @@ def compress_video(input_path, output_path, quality='medium'):
         }
     except Exception as e:
         print(f"Exception in compress_video: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e)}
+
+def convert_video_format(input_path, output_path, target_format='mp4'):
+    """
+    Convierte un video a otro formato
+    target_format: 'mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'
+    """
+    try:
+        # Mapeo de formatos a códecs
+        format_settings = {
+            'mp4': {
+                'vcodec': 'libx264',
+                'acodec': 'aac',
+                'preset': 'ultrafast'
+            },
+            'mov': {
+                'vcodec': 'libx264',
+                'acodec': 'aac',
+                'preset': 'ultrafast'
+            },
+            'avi': {
+                'vcodec': 'mpeg4',
+                'acodec': 'libmp3lame',
+                'preset': 'ultrafast'
+            },
+            'mkv': {
+                'vcodec': 'libx264',
+                'acodec': 'aac',
+                'preset': 'ultrafast'
+            },
+            'webm': {
+                'vcodec': 'libvpx-vp9',
+                'acodec': 'libopus',
+                'preset': 'ultrafast'
+            },
+            'flv': {
+                'vcodec': 'mpeg4',
+                'acodec': 'libmp3lame',
+                'preset': 'ultrafast'
+            }
+        }
+        
+        settings = format_settings.get(target_format.lower(), format_settings['mp4'])
+        
+        cmd = [
+            'ffmpeg',
+            '-i', input_path,
+            '-c:v', settings['vcodec'],
+            '-c:a', settings['acodec'],
+            '-preset', settings['preset'],
+            '-b:a', '192k',
+            '-y',
+            output_path
+        ]
+        
+        print(f"Ejecutando comando FFmpeg para conversión: {' '.join(cmd)}")
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)  # 15 minutos de timeout
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'error': 'Video conversion timed out (exceeded 15 minutes)'}
+        
+        if result.returncode != 0:
+            print(f"Error FFmpeg (código {result.returncode}):")
+            print(f"STDOUT: {result.stdout}")
+            print(f"STDERR: {result.stderr}")
+            return {'success': False, 'error': f'FFmpeg error: {result.stderr}'}
+        
+        # Calcular cambio de tamaño
+        if not os.path.exists(output_path):
+            return {'success': False, 'error': 'Output file was not created'}
+        
+        original_size = os.path.getsize(input_path) / (1024 * 1024)
+        converted_size = os.path.getsize(output_path) / (1024 * 1024)
+        
+        if original_size == 0:
+            compression_ratio = 0
+        else:
+            compression_ratio = ((original_size - converted_size) / original_size) * 100
+        
+        return {
+            'success': True,
+            'original_size': f"{original_size:.2f} MB",
+            'converted_size': f"{converted_size:.2f} MB",
+            'compression_ratio': f"{compression_ratio:.1f}%",
+            'format': target_format.upper()
+        }
+    except Exception as e:
+        print(f"Exception in convert_video_format: {str(e)}")
         import traceback
         traceback.print_exc()
         return {'success': False, 'error': str(e)}

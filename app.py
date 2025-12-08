@@ -10,7 +10,7 @@ os.environ['PATH'] = os.path.dirname(imageio_ffmpeg.get_ffmpeg_exe()) + os.paths
 from transcriber import process_video
 from humanizer import humanize_text, improve_readability
 from summarizer import summarize_text, extract_keywords
-from media_compressor import compress_image, convert_image_format, compress_video, get_media_info
+from media_compressor import compress_image, convert_image_format, compress_video, convert_video_format, get_media_info
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -202,31 +202,66 @@ def convert_image_route():
 def compress_video_route():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-    
+
     file = request.files['file']
     quality = request.form.get('quality', 'medium')
-    
+
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
-    
+
     try:
         filename = secure_filename(file.filename)
         input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         output_filename = f"compressed_{os.path.splitext(filename)[0]}.mp4"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
-        
+
         print(f"Guardando archivo: {input_path}")
         file.save(input_path)
-        
+
         print(f"Comprimiendo video: {filename}")
         result = compress_video(input_path, output_path, quality=quality)
-        
+
         if result['success']:
             result['download_file'] = output_filename
             print(f"Video comprimido exitosamente")
         else:
             print(f"Error al comprimir: {result.get('error')}")
-        
+
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/convert-video', methods=['POST'])
+def convert_video_route():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    target_format = request.form.get('format', 'mp4')
+
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    try:
+        filename = secure_filename(file.filename)
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        output_filename = f"converted_{os.path.splitext(filename)[0]}.{target_format}"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+
+        print(f"Guardando archivo: {input_path}")
+        file.save(input_path)
+
+        print(f"Convirtiendo video: {filename} a {target_format}")
+        result = convert_video_format(input_path, output_path, target_format=target_format)
+
+        if result['success']:
+            result['download_file'] = output_filename
+            print(f"Video convertido exitosamente")
+        else:
+            print(f"Error al convertir: {result.get('error')}")
+
         return jsonify(result)
     except Exception as e:
         import traceback
